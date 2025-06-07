@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🧠 Mini Interpreter</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #ffffff;
+      color: #111;
+      text-align: center;
+      padding: 40px;
+    }
+
+    textarea {
+      width: 400px;
+      height: 140px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 16px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 24px;
+      font-size: 16px;
+      background-color: #3c82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2c63d1;
+    }
+
+    #output {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #007400;
+    }
+
+    .footer {
+      margin-top: 30px;
+      color: #777;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🧠 Mini Interpreter</h2>
+  <p>Supports: <code>let x = 5;</code> and <code>if (x > 3) then y else z</code></p>
+
+  <textarea id="code-input">let x = 10;
+let y = x + 2;
+if (y > 10) then y else x</textarea><br>
+
+  <button onclick="evaluateCode()">Evaluate</button>
+
+  <div id="output"></div>
+
+  <script>
+    function evaluateCode() {
+      const input = document.getElementById("code-input").value;
+      const lines = input.split(';').map(line => line.trim()).filter(Boolean);
+      const env = {};
+
+      function evalExpr(expr) {
+        try {
+          const tokens = expr.replace(/\b[a-zA-Z_]\w*\b/g, match =>
+            env.hasOwnProperty(match) ? env[match] : (() => { throw new Error(`Undefined variable: ${match}`); })()
+          );
+          return eval(tokens);
+        } catch (err) {
+          return `❌ Error: ${err.message}`;
+        }
+      }
+
+      let result = "";
+
+      for (let line of lines) {
+        if (line.startsWith("let ")) {
+          const match = line.match(/^let\s+(\w+)\s*=\s*(.+)$/);
+          if (!match) return displayError("Invalid let syntax");
+          const [, varName, expr] = match;
+          const value = evalExpr(expr);
+          if (typeof value === "string" && value.startsWith("❌")) return displayError(value);
+          env[varName] = value;
+        } else if (line.startsWith("if ")) {
+          const match = line.match(/^if\s*\((.+)\)\s*then\s+(.+)\s+else\s+(.+)$/);
+          if (!match) return displayError("Invalid if syntax");
+          const [, condition, thenPart, elsePart] = match;
+          const conditionResult = evalExpr(condition);
+          const value = conditionResult ? evalExpr(thenPart) : evalExpr(elsePart);
+          result = value;
+        } else {
+          const value = evalExpr(line);
+          if (typeof value === "string" && value.startsWith("❌")) return displayError(value);
+          result = value;
+        }
+      }
+
+      document.getElementById("output").innerText = `✅ Result: ${result}`;
+
+      function displayError(msg) {
+        document.getElementById("output").innerText = msg;
+        return;
+      }
+    }
+  </script>
+
+  <div class="footer">Interpreter supports basic arithmetic and logic ⚙️</div>
+
+</body>
+</html>
